@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>더존 계정별원장 변환기</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      padding: 50px;
+    }
+    .drop-zone {
+      margin: 20px auto;
+      padding: 40px;
+      border: 3px dashed #cccccc;
+      border-radius: 10px;
+      width: 60%;
+      max-width: 500px;
+      background-color: #f9f9f9;
+      cursor: pointer;
+    }
+    .drop-zone.dragover {
+      background-color: #e6f7ff;
+      border-color: #1890ff;
+    }
+    #fileInput {
+      display: none;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin-top: 20px;
+    }
+    .hidden { display: none; }
+    #englishNameModal {
+      position: fixed;
+      top: 50%; left: 50%; transform: translate(-50%, -50%);
+      background: #fff; border: 1px solid #ccc; padding: 20px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+    #englishNameModal ul { list-style: none; padding: 0; }
+    #englishNameModal li { cursor: pointer; padding: 8px; }
+    #englishNameModal li:hover { background: #f0f0f0; }
+  </style>
+</head>
+<body>
+  <h1>📄 Douzone GL Coverter</h1>
+  <h2 style="margin-left: 30px;">(Korean to English)</h2>
+  <form method="POST" enctype="multipart/form-data">
+    <input type="text" id="companyInput" name="company_name" placeholder="회사명을 입력 후 Enter를 누르세요 (예: 필립스)" required style="width: 400px;">
+    <!-- ✅ 여기에 표시 영역 이동 -->
+    <p id="selectedNameDisplay" style="font-weight:bold; color:green; margin-top:6px;"></p>
+
+    <div class="drop-zone" id="dropZone">여기에 파일을 드래그하거나 클릭하여 업로드</div>
+    <input type="file" name="excel_file" id="fileInput" accept=".xlsx,.xls" required>
+    <p id="fileName"></p>
+    <input type="hidden" name="selected_english_name" id="selectedEnglishName">
+    <button type="submit" id="convertBtn" disabled>변환</button>
+    <button type="button" id="resetBtn" style="margin-left:10px;">리셋</button>
+
+  </form>
+
+  <!-- 영문명 선택 팝업 -->
+  <div id="englishNameModal" class="hidden">
+    <p>영문명을 선택하세요:</p>
+    <ul id="englishNameList"></ul>
+  </div>
+
+  <script>
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const fileNameDisplay = document.getElementById('fileName');
+    const companyInput = document.getElementById('companyInput');
+    const convertBtn = document.getElementById('convertBtn');
+    const selectedEnglishNameInput = document.getElementById('selectedEnglishName');
+    const englishNameModal = document.getElementById('englishNameModal');
+    const englishNameList = document.getElementById('englishNameList');
+
+    const companyMapping = {
+      '베이징그레이스레이저기술유한회사(영업소)': ['Grace Laser Korea Branch'],
+      '필립스카본블랙코리아 대표사무소': ['PCB KR RO', 'PHILLIPS CARBON BLACK KOREA REPRESENTATIVE OFFICE']
+    };
+
+    dropZone.addEventListener('click', () => fileInput.click());
+
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('dragover');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('dragover');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      if (e.dataTransfer.files.length) {
+        fileInput.files = e.dataTransfer.files;
+        fileNameDisplay.innerText = e.dataTransfer.files[0].name;
+      }
+    });
+
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files.length) {
+        fileNameDisplay.innerText = fileInput.files[0].name;
+      }
+    });
+
+    companyInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const inputValue = companyInput.value.trim();
+        const matches = Object.entries(companyMapping).filter(([kor]) => kor.includes(inputValue));
+
+        if (matches.length === 1) {
+          showModal(matches[0][1]);
+        } else if (matches.length > 1) {
+          const allOptions = matches.flatMap(m => m[1]);
+          showModal(allOptions);
+        } else {
+          alert('일치하는 회사명이 없습니다. 정확히 입력해주세요.');
+        }
+      }
+    });
+
+    function showModal(options) {
+      englishNameList.innerHTML = '';
+      options.forEach(name => {
+        const li = document.createElement('li');
+        li.textContent = name;
+        li.onclick = () => {
+          selectedEnglishNameInput.value = name;
+          englishNameModal.classList.add('hidden');
+          document.getElementById('selectedNameDisplay').innerText = `선택된 영문명: ${name}`;
+          alert(`✅ 선택한 영문명: ${name}`);
+          convertBtn.disabled = false;
+        };
+        englishNameList.appendChild(li);
+      });
+      englishNameModal.classList.remove('hidden');
+    }
+
+    document.getElementById('resetBtn').addEventListener('click', function () {
+      companyInput.value = '';
+      selectedEnglishNameInput.value = '';
+      fileInput.value = '';
+      fileNameDisplay.innerText = '';
+      document.getElementById('selectedNameDisplay').innerText = '';
+      convertBtn.disabled = true;
+    });
+  </script>
+</body>
+</html>
