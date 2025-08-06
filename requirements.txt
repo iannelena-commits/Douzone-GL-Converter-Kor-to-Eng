@@ -2,3 +2,5 @@ flask
 openpyxl
 pandas
 gunicorn
+openpyxl==3.1.2
+# 테스트용 주석 추가
